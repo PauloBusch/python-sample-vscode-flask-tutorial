@@ -1,0 +1,33 @@
+trigger:
+- main
+
+variables:
+  vmImageName: 'ubuntu-latest'
+  projectRoot: $(System.DefaultWorkingDirectory)
+  pythonVersion: '3.7'
+
+pool:
+  vmImage: $(vmImageName)
+
+steps:
+- task: UsePythonVersion@0
+  inputs:
+    versionSpec: '$(pythonVersion)'
+  displayName: 'Use Python $(pythonVersion)'
+
+- script: python -m pip install --upgrade pip setuptools wheel
+  displayName: 'Install tools'
+
+- script: pip install -r requirements.txt
+  displayName: 'Install requirements'
+  
+- script: |
+    pip install pytest pytest-azurepipelines
+    pip install pytest-cov
+    pytest --doctest-modules --junitxml=junit/test-results.xml --cov=. --cov-report=xml
+  displayName: 'Install and run pytest'
+
+- task: PublishCodeCoverageResults@1
+  inputs:
+    codeCoverageTool: Cobertura
+    summaryFileLocation: '$(projectRoot)/**/coverage.xml'
